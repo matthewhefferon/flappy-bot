@@ -22,10 +22,7 @@ interface GameState {
   lastPipeTime: number;
 }
 
-const GAME_WIDTH = 1200;
-const GAME_HEIGHT = 800;
 const BOT_SIZE = 80; // Base size, will be responsive
-const PIPE_WIDTH = 60;
 const PIPE_GAP = 200; // Will be adjusted based on screen size
 
 // Database pipe sizes - all same width
@@ -60,7 +57,7 @@ export default function FlappyBot() {
   });
 
   const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
-  const gameLoopRef = useRef<number>();
+  const gameLoopRef = useRef<number | null>(null);
   const lastPipeTimeRef = useRef<number>(0);
 
   // Handle window resize and initial size
@@ -106,7 +103,7 @@ export default function FlappyBot() {
       lastPipeTime: 0,
     });
     lastPipeTimeRef.current = 0;
-  }, []);
+  }, [windowSize.height]);
 
   const gameLoop = useCallback(() => {
     setGameState((prev) => {
@@ -140,7 +137,6 @@ export default function FlappyBot() {
         // New pipe every 2 seconds
         const sizes = ["small", "medium", "large"] as const;
         const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-        const pipeSize = PIPE_SIZES[randomSize];
 
         const gapSize = Math.min(PIPE_GAP, windowSize.height * 0.3); // Responsive gap
         const minBottomSpace = 100; // Ensure at least 100px from bottom
@@ -241,7 +237,7 @@ export default function FlappyBot() {
       );
       return newState;
     });
-  }, []);
+  }, [windowSize.height, windowSize.width]);
 
   useEffect(() => {
     if (gameState.gameStarted && !gameState.gameOver) {
@@ -274,12 +270,15 @@ export default function FlappyBot() {
   return (
     <div
       className="fixed inset-0 overflow-hidden"
-      style={{ backgroundColor: "#c6c9d2" }}
+      style={{ backgroundColor: "#FFFFFF" }}
     >
       {/* Top Center Score Display */}
       {gameState.gameStarted && !gameState.gameOver && (
         <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-20">
-          <p className="text-6xl font-bold text-white drop-shadow-lg">
+          <p
+            className="text-6xl font-bold drop-shadow-lg"
+            style={{ color: "#22242B" }}
+          >
             {gameState.score}
           </p>
         </div>
@@ -298,7 +297,7 @@ export default function FlappyBot() {
             backgroundSize: "100% auto",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "0% 100%",
-            backgroundColor: "#c6c9d2",
+            backgroundColor: "#FFFFFF",
           }}
         />
 
@@ -363,8 +362,8 @@ export default function FlappyBot() {
 
         {/* Start Screen Modal */}
         {!gameState.gameStarted && (
-          <div className="absolute inset-0 flex items-center justify-center z-30">
-            <div className="bg-white p-8 rounded-lg text-center max-w-md mx-4">
+          <div className="absolute inset-0 flex items-center justify-center z-30 backdrop-blur-[2px]">
+            <div className="p-8 rounded-lg text-center max-w-md mx-4">
               <h1
                 className="text-6xl font-bold mb-8"
                 style={{ color: "#22242B" }}
@@ -373,7 +372,7 @@ export default function FlappyBot() {
               </h1>
               <button
                 onClick={jump}
-                className="text-white font-bold py-4 px-8 rounded-lg text-xl"
+                className="font-bold py-4 px-8 rounded-lg text-xl text-white drop-shadow-lg"
                 style={{ backgroundColor: "#509EE3" }}
               >
                 Start Game
@@ -384,8 +383,8 @@ export default function FlappyBot() {
 
         {/* Game Over Modal */}
         {gameState.gameOver && (
-          <div className="absolute inset-0 flex items-center justify-center z-30">
-            <div className="bg-white p-8 rounded-lg text-center max-w-md mx-4">
+          <div className="absolute inset-0 flex items-center justify-center z-30 backdrop-blur-[2px]">
+            <div className="p-8 rounded-lg text-center max-w-md mx-4">
               <h2
                 className="text-5xl font-bold mb-4"
                 style={{ color: "#22242B" }}
@@ -397,7 +396,7 @@ export default function FlappyBot() {
               </p>
               <button
                 onClick={resetGame}
-                className="text-white font-bold py-4 px-8 rounded-lg text-xl"
+                className="font-bold py-4 px-8 rounded-lg text-xl text-white drop-shadow-lg"
                 style={{ backgroundColor: "#509EE3" }}
               >
                 Play Again
