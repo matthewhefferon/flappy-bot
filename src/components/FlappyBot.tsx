@@ -66,7 +66,7 @@ export default function FlappyBot() {
   // Detect refresh rate
   useEffect(() => {
     let frameCount = 0;
-    let startTime = performance.now();
+    const startTime = performance.now();
 
     function measureFPS() {
       frameCount++;
