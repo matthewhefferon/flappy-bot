@@ -386,11 +386,11 @@ export default function FlappyBot() {
               <SocialLinks show={true} />
             </div>
             <div
-              className="p-8 rounded-2xl text-center max-w-4xl mx-4 backdrop-blur-xl border border-white/20 shadow-2xl"
+              className="p-6 sm:p-8 rounded-2xl text-center max-w-4xl mx-4 backdrop-blur-xl border border-white/20 shadow-2xl"
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.6)",
-                minWidth: "400px",
-                width: "50vw",
+                minWidth: "320px",
+                width: "90vw",
                 maxWidth: "500px",
               }}
             >
@@ -422,11 +422,11 @@ export default function FlappyBot() {
               <SocialLinks show={true} />
             </div>
             <div
-              className="p-8 rounded-2xl text-center max-w-4xl mx-4 backdrop-blur-xl border border-white/20 shadow-2xl"
+              className="p-6 sm:p-8 rounded-2xl text-center max-w-4xl mx-4 backdrop-blur-xl border border-white/20 shadow-2xl"
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.6)",
-                minWidth: "400px",
-                width: "50vw",
+                minWidth: "320px",
+                width: "90vw",
                 maxWidth: "500px",
               }}
             >
