@@ -41,16 +41,7 @@ export default function FlappyBot() {
   const [gameState, setGameState] = useState<GameState>({
     botY: 400, // Will be updated by windowSize
     botVelocity: 0,
-    pipes: [
-      // Add one initial pipe visible on screen
-      {
-        x: 400,
-        topHeight: 200,
-        bottomY: 450,
-        passed: false,
-        size: "medium",
-      },
-    ],
+    pipes: [], // Start with no pipes - they'll be generated after window size is detected
     score: 0,
     gameOver: false,
     gameStarted: false,
@@ -58,7 +49,7 @@ export default function FlappyBot() {
     lastPipeTime: 0,
   });
 
-  const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
+  const [windowSize, setWindowSize] = useState({ width: 375, height: 667 }); // Mobile-first default
   const gameLoopRef = useRef<number | null>(null);
   const lastPipeTimeRef = useRef<number>(0);
   const [refreshRate, setRefreshRate] = useState<number>(60);
@@ -179,7 +170,7 @@ export default function FlappyBot() {
       let newPipes = [...prev.pipes];
       let pipeGenerated = false;
 
-      if (now - prev.lastPipeTime > 2000) {
+      if (now - prev.lastPipeTime > 2000 || prev.pipes.length === 0) {
         // New pipe every 2 seconds
         const sizes = ["small", "medium", "large"] as const;
         const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
