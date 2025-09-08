@@ -2,14 +2,16 @@
 
 A Metabase themed Flappy Bird game built with Next.js, featuring blue bar charts and a metabot character.
 
+![Gameplay Screenshot](public/gameplay.png)
+
 ## Features
 
-- 🎮 Classic Flappy Bird gameplay mechanics
-- 🤖 Metabot character as the player
-- 🔵 Blue bar charts as obstacles
-- 🎨 Tech-themed design with #c6c9d2 background
-- 📱 Fullscreen responsive gameplay
-- ⚡ Fast-paced scrolling action
+- Classic Flappy Bird gameplay mechanics
+- Metabot character as the player
+- Blue bar charts as obstacles
+- Tech-themed design with glassmorphism UI
+- Fullscreen responsive gameplay
+- Fast-paced scrolling action
 
 ## Getting Started
 
@@ -48,4 +50,4 @@ npm run dev
 - `background.svg` - Scrolling background
 - `icon.svg` - Game favicon
 
-Enjoy playing Flappy Bot! 🚀
+Enjoy playing Flappy Bot!
