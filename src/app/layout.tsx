@@ -9,11 +9,37 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NODE_ENV === "production"
+      ? "https://flappy-bot.vercel.app"
+      : "http://localhost:3000"
+  ),
   title: "Flappy Bot",
   description:
-    "A Metabase themed Flappy Bird game featuring blue pipes and a metabot character",
+    "A Metabase themed Flappy Bird game featuring blue bar charts and Metabot character",
   icons: {
     icon: "/icon.svg",
+  },
+  openGraph: {
+    title: "Flappy Bot - Metabase Game",
+    description:
+      "Play Flappy Bot! Navigate Metabot through blue bar charts in this fun Flappy Bird style game.",
+    type: "website",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Flappy Bot - Metabase Game",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Flappy Bot - Flappy Bird Game",
+    description:
+      "Play Flappy Bot! Navigate Metabot through blue bar charts in this fun Flappy Bird style game.",
+    images: ["/og.png"],
   },
 };
 

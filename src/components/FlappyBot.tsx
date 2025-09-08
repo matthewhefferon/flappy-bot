@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
+import SocialLinks from "./SocialLinks";
 
 interface Pipe {
   x: number;
@@ -31,9 +32,10 @@ const PIPE_SIZES = {
   medium: { width: 60, height: 160 },
   large: { width: 60, height: 200 },
 };
-const GRAVITY = 0.5;
-const JUMP_FORCE = -8;
-const PIPE_SPEED = 3;
+// Original physics constants (per frame at 60fps)
+const GRAVITY = 0.4;
+const JUMP_FORCE = -7;
+const PIPE_SPEED = 2.5;
 
 export default function FlappyBot() {
   const [gameState, setGameState] = useState<GameState>({
@@ -59,6 +61,30 @@ export default function FlappyBot() {
   const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
   const gameLoopRef = useRef<number | null>(null);
   const lastPipeTimeRef = useRef<number>(0);
+  const [refreshRate, setRefreshRate] = useState<number>(60);
+
+  // Detect refresh rate
+  useEffect(() => {
+    let frameCount = 0;
+    let startTime = performance.now();
+
+    function measureFPS() {
+      frameCount++;
+      const currentTime = performance.now();
+
+      if (currentTime - startTime >= 1000) {
+        const detectedFPS = Math.round(
+          (frameCount * 1000) / (currentTime - startTime)
+        );
+        setRefreshRate(detectedFPS);
+        return;
+      }
+
+      requestAnimationFrame(measureFPS);
+    }
+
+    requestAnimationFrame(measureFPS);
+  }, []);
 
   // Handle window resize and initial size
   useEffect(() => {
@@ -84,12 +110,22 @@ export default function FlappyBot() {
     }
 
     if (!gameState.gameOver) {
+      // Scale jump force based on refresh rate - make it stronger on high refresh rates
+      const jumpScale = refreshRate > 90 ? (75 / refreshRate) * 1.2 : 1;
+
+      // Progressive difficulty - jump force also scales with score
+      const difficultyMultiplier = 1 + gameState.score * 0.02;
+      const maxDifficulty = 2.5;
+      const cappedMultiplier = Math.min(difficultyMultiplier, maxDifficulty);
+
+      const adjustedJumpForce = JUMP_FORCE * jumpScale * cappedMultiplier;
+
       setGameState((prev) => ({
         ...prev,
-        botVelocity: JUMP_FORCE,
+        botVelocity: adjustedJumpForce,
       }));
     }
-  }, [gameState.gameStarted, gameState.gameOver]);
+  }, [gameState.gameStarted, gameState.gameOver, gameState.score, refreshRate]);
 
   const resetGame = useCallback(() => {
     setGameState({
@@ -111,11 +147,21 @@ export default function FlappyBot() {
         return prev;
       }
 
-      console.log(
-        `🔄 Game loop: pipes=${prev.pipes.length}, lastPipeTime=${prev.lastPipeTime}`
-      );
+      // Scale physics based on refresh rate (75Hz reference)
+      const physicsScale = refreshRate > 90 ? 75 / refreshRate : 1;
+      // Make gravity even weaker on high refresh rates
+      const gravityScale = refreshRate > 90 ? (75 / refreshRate) * 0.8 : 1;
+
+      // Progressive difficulty - gets faster as score increases
+      const difficultyMultiplier = 1 + prev.score * 0.02; // 2% faster per point
+      const maxDifficulty = 2.5; // Cap at 2.5x speed
+      const cappedMultiplier = Math.min(difficultyMultiplier, maxDifficulty);
+
+      const adjustedGravity = GRAVITY * gravityScale * cappedMultiplier;
+      const adjustedPipeSpeed = PIPE_SPEED * physicsScale * cappedMultiplier;
+
       // Update bot physics
-      const newVelocity = prev.botVelocity + GRAVITY;
+      const newVelocity = prev.botVelocity + adjustedGravity;
       const newBotY = prev.botY + newVelocity;
 
       // Check ground collision
@@ -150,38 +196,16 @@ export default function FlappyBot() {
           size: randomSize,
         });
         pipeGenerated = true;
-        console.log(
-          `🆕 Generated pipe #${newPipes.length} at x:${windowSize.width}`
-        );
       }
 
       // Update pipe positions
-      if (newPipes.length > 0) {
-        console.log(
-          `📍 Before move: pipes at positions:`,
-          newPipes.map((p) => `${p.x}`).join(", ")
-        );
-      }
 
       newPipes = newPipes
-        .map((pipe) => ({ ...pipe, x: pipe.x - PIPE_SPEED }))
+        .map((pipe) => ({ ...pipe, x: pipe.x - adjustedPipeSpeed }))
         .filter((pipe) => {
           const pipeSize = PIPE_SIZES[pipe.size];
-          const shouldKeep = pipe.x > -pipeSize.width;
-          if (!shouldKeep) {
-            console.log(
-              `🗑️ Removing pipe at x:${pipe.x}, width:${pipeSize.width}`
-            );
-          }
-          return shouldKeep;
+          return pipe.x > -pipeSize.width;
         });
-
-      if (newPipes.length > 0) {
-        console.log(
-          `📍 After move: pipes at positions:`,
-          newPipes.map((p) => `${p.x}`).join(", ")
-        );
-      }
 
       // Check pipe collisions
       const botLeft = windowSize.width * 0.1; // 10% from left
@@ -200,9 +224,6 @@ export default function FlappyBot() {
         if (botRight > pipeLeft && botLeft < pipeRight) {
           if (botTop < pipe.topHeight || botBottom > pipe.bottomY) {
             gameOver = true;
-            console.log(
-              `💥 Collision detected! Bot: top=${botTop}, bottom=${botBottom}, Pipe: top=${pipe.topHeight}, bottom=${pipe.bottomY}`
-            );
           }
         }
 
@@ -210,9 +231,6 @@ export default function FlappyBot() {
         if (!pipe.passed && pipe.x + pipeSize.width < botLeft) {
           pipe.passed = true;
           newScore += 1;
-          console.log(
-            `🎯 Scored! Pipe at x:${pipe.x}, botLeft:${botLeft}, newScore:${newScore}`
-          );
         }
       }
 
@@ -230,14 +248,9 @@ export default function FlappyBot() {
         lastPipeTime: pipeGenerated ? now : prev.lastPipeTime,
       };
 
-      console.log(
-        `📊 State update: pipes ${prev.pipes.length} → ${newPipes.length}${
-          pipeGenerated ? " (NEW PIPE!)" : ""
-        }`
-      );
       return newState;
     });
-  }, [windowSize.height, windowSize.width]);
+  }, [windowSize.height, windowSize.width, refreshRate]);
 
   useEffect(() => {
     if (gameState.gameStarted && !gameState.gameOver) {
@@ -260,12 +273,17 @@ export default function FlappyBot() {
       if (event.code === "Space") {
         event.preventDefault();
         jump();
+      } else if (event.code === "Escape") {
+        event.preventDefault();
+        if (gameState.gameStarted && !gameState.gameOver) {
+          setGameState((prev) => ({ ...prev, gameOver: true }));
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [jump]);
+  }, [jump, gameState.gameStarted, gameState.gameOver]);
 
   return (
     <div
@@ -363,16 +381,31 @@ export default function FlappyBot() {
         {/* Start Screen Modal */}
         {!gameState.gameStarted && (
           <div className="absolute inset-0 flex items-center justify-center z-30 backdrop-blur-[2px]">
-            <div className="p-8 rounded-lg text-center max-w-md mx-4">
+            {/* Social Links for Start Screen */}
+            <div className="absolute top-4 right-4 z-40">
+              <SocialLinks show={true} />
+            </div>
+            <div
+              className="p-8 rounded-2xl text-center max-w-4xl mx-4 backdrop-blur-xl border border-white/20 shadow-2xl"
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.6)",
+                minWidth: "400px",
+                width: "50vw",
+                maxWidth: "500px",
+              }}
+            >
               <h1
-                className="text-6xl font-bold mb-8"
+                className="text-6xl font-bold mb-4"
                 style={{ color: "#22242B" }}
               >
                 Flappy Bot
               </h1>
+              <p className="text-lg mb-8" style={{ color: "#5A6072" }}>
+                Help Metabot navigate through the bar charts!
+              </p>
               <button
                 onClick={jump}
-                className="font-bold py-4 px-8 rounded-lg text-xl text-white drop-shadow-lg"
+                className="font-bold py-4 px-8 rounded-lg text-xl text-white drop-shadow-lg hover:scale-105 transition-all duration-200"
                 style={{ backgroundColor: "#509EE3" }}
               >
                 Start Game
@@ -384,7 +417,19 @@ export default function FlappyBot() {
         {/* Game Over Modal */}
         {gameState.gameOver && (
           <div className="absolute inset-0 flex items-center justify-center z-30 backdrop-blur-[2px]">
-            <div className="p-8 rounded-lg text-center max-w-md mx-4">
+            {/* Social Links for Game Over Screen */}
+            <div className="absolute top-4 right-4 z-40">
+              <SocialLinks show={true} />
+            </div>
+            <div
+              className="p-8 rounded-2xl text-center max-w-4xl mx-4 backdrop-blur-xl border border-white/20 shadow-2xl"
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.6)",
+                minWidth: "400px",
+                width: "50vw",
+                maxWidth: "500px",
+              }}
+            >
               <h2
                 className="text-5xl font-bold mb-4"
                 style={{ color: "#22242B" }}
@@ -396,7 +441,7 @@ export default function FlappyBot() {
               </p>
               <button
                 onClick={resetGame}
-                className="font-bold py-4 px-8 rounded-lg text-xl text-white drop-shadow-lg"
+                className="font-bold py-4 px-8 rounded-lg text-xl text-white drop-shadow-lg hover:scale-105 transition-all duration-200"
                 style={{ backgroundColor: "#509EE3" }}
               >
                 Play Again
@@ -406,10 +451,12 @@ export default function FlappyBot() {
         )}
       </div>
 
-      {/* Instructions */}
-      {gameState.gameStarted && !gameState.gameOver && (
-        <div className="absolute bottom-4 left-4 z-20 text-gray-800 text-sm">
-          <p>Click or press space to jump</p>
+      {/* Instructions - only show on start and game over screens */}
+      {(!gameState.gameStarted || gameState.gameOver) && (
+        <div className="absolute bottom-4 left-4 z-30">
+          <p className="text-sm" style={{ color: "#5A6072" }}>
+            Press <strong>SPACEBAR</strong> or <strong>CLICK</strong> to flap
+          </p>
         </div>
       )}
     </div>
