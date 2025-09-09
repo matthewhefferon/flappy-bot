@@ -53,6 +53,20 @@ export default function FlappyBot() {
   const gameLoopRef = useRef<number | null>(null);
   const lastPipeTimeRef = useRef<number>(0);
   const [refreshRate, setRefreshRate] = useState<number>(60);
+  const [isMetacat, setIsMetacat] = useState(false);
+  const konamiSequence = useRef<string[]>([]);
+  const konamiCode = [
+    "ArrowUp",
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowLeft",
+    "ArrowRight",
+    "KeyB",
+    "KeyA",
+  ];
 
   // Detect refresh rate
   useEffect(() => {
@@ -258,6 +272,27 @@ export default function FlappyBot() {
     };
   }, [gameState.gameStarted, gameState.gameOver, gameLoop]);
 
+  // Konami code detection
+  const checkKonamiCode = useCallback((keyCode: string) => {
+    konamiSequence.current.push(keyCode);
+
+    // Keep only the last 10 keys
+    if (konamiSequence.current.length > konamiCode.length) {
+      konamiSequence.current = konamiSequence.current.slice(-konamiCode.length);
+    }
+
+    // Check if the sequence matches the Konami code
+    if (konamiSequence.current.length === konamiCode.length) {
+      const matches = konamiSequence.current.every(
+        (key, index) => key === konamiCode[index]
+      );
+      if (matches) {
+        setIsMetacat(true);
+        konamiSequence.current = []; // Reset sequence
+      }
+    }
+  }, []);
+
   // Keyboard support
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -269,12 +304,23 @@ export default function FlappyBot() {
         if (gameState.gameStarted && !gameState.gameOver) {
           setGameState((prev) => ({ ...prev, gameOver: true }));
         }
+      } else {
+        // Check for Konami code (only when game hasn't started)
+        if (!gameState.gameStarted) {
+          checkKonamiCode(event.code);
+        }
+      }
+
+      // Reset to Metabot with 'R' key (for testing)
+      if (event.code === "KeyR" && !gameState.gameStarted) {
+        setIsMetacat(false);
+        konamiSequence.current = [];
       }
     };
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [jump, gameState.gameStarted, gameState.gameOver]);
+  }, [jump, gameState.gameStarted, gameState.gameOver, checkKonamiCode]);
 
   return (
     <div
@@ -344,7 +390,7 @@ export default function FlappyBot() {
           );
         })}
 
-        {/* Metabot */}
+        {/* Character (Metabot or Metacat) */}
         <div
           className="absolute z-10"
           style={{
@@ -361,8 +407,8 @@ export default function FlappyBot() {
           }}
         >
           <Image
-            src="/metabot.svg"
-            alt="Metabot"
+            src={isMetacat ? "/metacat.svg" : "/metabot.svg"}
+            alt={isMetacat ? "Metacat" : "Metabot"}
             width={BOT_SIZE}
             height={BOT_SIZE}
             className="w-full h-full"
@@ -389,10 +435,11 @@ export default function FlappyBot() {
                 className="text-6xl font-bold mb-4"
                 style={{ color: "#22242B" }}
               >
-                Flappy Bot
+                Flappy {isMetacat ? "Cat" : "Bot"}
               </h1>
               <p className="text-lg mb-8" style={{ color: "#5A6072" }}>
-                Help Metabot navigate through the bar charts!
+                Help {isMetacat ? "Metacat" : "Metabot"} navigate through the
+                bar charts!
               </p>
               <button
                 onClick={jump}
