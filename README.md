@@ -1,6 +1,6 @@
 # Flappy Bot
 
-A Metabase themed Flappy Bird game built with Next.js, featuring blue bar charts and a metabot character.
+A [Metabase](https://metabase.com) themed Flappy Bird game built with Next.js, featuring blue bar charts and a metabot character.
 
 ![Gameplay Screenshot](public/gameplay.png)
 
