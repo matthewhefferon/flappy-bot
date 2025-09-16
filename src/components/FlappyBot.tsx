@@ -116,7 +116,8 @@ export default function FlappyBot() {
 
     if (!gameState.gameOver) {
       // Scale jump force based on refresh rate - make it stronger on high refresh rates
-      const jumpScale = refreshRate > 90 ? (75 / refreshRate) * 1.2 : 1;
+      const jumpScale =
+        refreshRate > 90 ? (75 / refreshRate) * 1.2 : 75 / refreshRate;
 
       // Progressive difficulty - jump force also scales with score
       const difficultyMultiplier = 1 + gameState.score * 0.02;
@@ -153,9 +154,10 @@ export default function FlappyBot() {
       }
 
       // Scale physics based on refresh rate (75Hz reference)
-      const physicsScale = refreshRate > 90 ? 75 / refreshRate : 1;
+      const physicsScale = 75 / refreshRate;
       // Make gravity even weaker on high refresh rates
-      const gravityScale = refreshRate > 90 ? (75 / refreshRate) * 0.8 : 1;
+      const gravityScale =
+        refreshRate > 90 ? (75 / refreshRate) * 0.8 : 75 / refreshRate;
 
       // Progressive difficulty - gets faster as score increases
       const difficultyMultiplier = 1 + prev.score * 0.02; // 2% faster per point
